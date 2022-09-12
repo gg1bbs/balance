@@ -1,6 +1,6 @@
 import math
-# import random
-# import matplotlib
+import random
+import matplotlib
 # import pygame
 
 g = 9.8
@@ -21,9 +21,9 @@ def simulation(x,v,a,ang):
     tick_counter = 0
     adj = 1.1
     while True:
-        if x < 0:
+        if x <= 0:
             ang = ang - adj
-        elif x > 0:
+        else:
             ang = ang + adj
 
         a += -1 * ((math.sin(ang) * g) / m) / f
