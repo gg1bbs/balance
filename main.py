@@ -1,7 +1,7 @@
 import math
 import random
 import matplotlib
-# import pygame
+#import pygame
 
 g = 9.8
 m = 10
@@ -14,7 +14,12 @@ def main():
     a = 0
     ang = 0
 
+    initialise()
     simulation(x,v,a,ang)
+
+def initialise():
+    print("Hello World")
+
 
 def simulation(x,v,a,ang):
     second_counter = 0
