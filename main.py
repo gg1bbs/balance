@@ -22,7 +22,7 @@ SCREEN_WIDTH = 600
 DISPLAYSURF = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 DISPLAYSURF.fill(WHITE)
-pygame.display.set_caption("Game")
+pygame.display.set_caption("Balance")
 
 
 def main():
@@ -37,29 +37,6 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (300, 200)
 
-    # def move(self):
-    #     pressed_keys = pygame.key.get_pressed()
-    #    # if pressed_keys[K_UP]:
-    #     #self.rect.move_ip(0, -5)
-    #    # if pressed_keys[K_DOWN]:
-    #     # self.rect.move_ip(0,5)
-
-    #     if self.rect.left > 0:
-    #         if pressed_keys[K_LEFT]:
-    #             self.rect.move_ip(-5, 0)
-    #     if self.rect.right < SCREEN_WIDTH:
-    #         if pressed_keys[K_RIGHT]:
-    #             self.rect.move_ip(5, 0)
-
-    # def pos(self,x):
-    #     self.rect.center = (200, 300 + x)
-
-# class Beam(pygame.sprite.Sprite):
-#     def __init__(self):
-#         super().__init__()
-#         self.image = pygame.image.load("beam.png")
-#         self.rect = self.image.get_rect()
-#         self.rect.center = (200, 300)
 
 def loop():
 
@@ -83,18 +60,17 @@ def loop():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-            
+
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT]:
             ang = ang + adj/FPS
         if pressed_keys[K_RIGHT]:
             ang = ang - adj/FPS
-                
+
         if ang < -math.pi/2:
             ang = -math.pi/2
         elif ang > math.pi/2:
             ang = math.pi/2
-
 
         g, m, x, v, a, ang, adj = simulation(g, m, x, v, a, ang, adj)
 
@@ -108,62 +84,68 @@ def loop():
         for entity in all_sprites:
             DISPLAYSURF.blit(entity.image, entity.rect)
             entity.rect.center = (ball_x, ball_y)
-        
+
         pygame.draw.line(DISPLAYSURF, BLACK, beam_start, beam_end, 5)
-        
+
         # for entity in [B1]:
         #     DISPLAYSURF.blit(entity.image, entity.rect)
-        #     entity.image = pygame.transform.rotate(entity.image, ang*180/math.pi)            
+        #     entity.image = pygame.transform.rotate(entity.image, ang*180/math.pi)
 
         pygame.display.update()
         FramePerSec.tick(FPS)
 
 
 def simulation(g, m, x, v, a, ang, adj):
-    
+
     # if x <= 0:
     #     ang = ang - adj/FPS
     # else:
     #     ang = ang + adj/FPS
-    
+
     # if ang < -math.pi/4:
     #     ang = -math.pi/4
     # elif ang > math.pi/4:
     #     ang = math.pi/4
 
-    a += -1 * ((math.sin(ang) * g) / m) / FPS
-    # if a > 0:
-    #     a -= 0.004 * math.cos(ang) * g * m
-    # elif a < 0:
-    #     a += 0.004 * math.cos(ang) * g * m
-
+    a += -1 * (math.sin(ang) * g) / FPS
+    print(math.sin(ang))
     v += a / FPS
     x += v / FPS
-    if x < -10:
-        x = -10
-        v=0
-        a=0
-    elif x > 10:
-        x = 10
-        v=0
-        a=0
+    if x < -1:
+        x = -1
+        v = 0
+        a = 0
+    elif x > 1:
+        x = 1
+        v = 0
+        a = 0
+
+    if a > 0:
+        a -= 0.004 * math.cos(ang) * g
+    elif a < 0:
+        a += 0.004 * math.cos(ang) * g
 
     return g, m, x, v, a, ang, adj
 
+
 def ball_pos(x, ang):
     if ang != 0:
-        ball_x = x* math.cos(ang) *20 + SCREEN_WIDTH/2
-        ball_y = - x*math.sin(ang) *20 + SCREEN_HEIGHT/2
+        ball_x = x * math.cos(ang) * 200 + SCREEN_WIDTH/2
+        ball_y = - x*math.sin(ang) * 200 + SCREEN_HEIGHT/2
     else:
-        ball_x = x *20 + SCREEN_WIDTH/2
+        ball_x = x * 200 + SCREEN_WIDTH/2
         ball_y = SCREEN_HEIGHT/2
+
+    ball_x -= 64/2 * math.sin(ang)
+    ball_y -= 64/2 * math.cos(ang)
 
     return ball_x, ball_y
 
+
 def beam_pos(ang):
-    
+
     beam_length = 200
-    
+
     beam_start_x = SCREEN_WIDTH/2 - beam_length*math.cos(-ang)
     beam_start_y = SCREEN_HEIGHT/2 - beam_length*math.sin(-ang)
     beam_end_x = SCREEN_WIDTH/2 + beam_length*math.cos(-ang)
@@ -173,6 +155,7 @@ def beam_pos(ang):
     beam_end = (beam_end_x, beam_end_y)
 
     return beam_start, beam_end
+
 
 if __name__ == "__main__":
     main()
