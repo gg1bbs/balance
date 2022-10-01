@@ -113,7 +113,7 @@ def loop():
         if mode == "PID":
             ang_set, previous_err, integral = PID_adj(kp, ki, kd,
                                                       x, previous_err, integral)
-            print(integral)
+
             if abs(ang - ang_set) < adj_pow/100:
                  ang = ang                                
             elif ang < ang_set:
