@@ -9,7 +9,7 @@ pygame.init()
 
 FPS = 60
 FramePerSec = pygame.time.Clock()
-beam_length = 300
+beam_length = 1
 u = 0.002
 
 BLUE = (0, 0, 255)
@@ -42,15 +42,17 @@ class Ball(pygame.sprite.Sprite):
 
 def loop():
     g = 9.8
-    m = 100
+    m = 1
     x = 0
     v = 0
     a = 0
     ang = 0
+    f_p = 0
     adj_pow = 1
-    kp = 5 # 4 occilate twice at 1m
-    ki = 0
-    kd = 0  # 0.6
+    kp = 0.5 #0.5 to occilate at 1m beam length
+    ki = 0.5
+    kd = 0.4  # 0.6
+    push_force = 5
     previous_err = 0
     integral = 0
     P1 = Ball()
@@ -73,27 +75,27 @@ def loop():
                     mode = "PID"
                 if event.key == pygame.K_r:
                     x = 0
-                    v = 20
+                    v = 1
                     a = 0
                     ang = 0.05
                     print("reset")
                 if event.key == pygame.K_1:
-                    kp -= 0.1
+                    kp -= 0.01
                     print(f"kp = {kp}")
                 if event.key == pygame.K_2:
-                    kp += 0.1
+                    kp += 0.01
                     print(f"kp = {kp}")
                 if event.key == pygame.K_3:
-                    kd -= 0.01
+                    kd -= 0.1
                     print(f"kd = {kd}")
                 if event.key == pygame.K_4:
-                    kd += 0.01
+                    kd += 0.1
                     print(f"kd = {kd}")
                 if event.key == pygame.K_5:
-                    ki -= 0.25
+                    ki -= 0.01
                     print(f"ki = {ki}")
                 if event.key == pygame.K_6:
-                    ki += 0.25
+                    ki += 0.01
                     print(f"ki = {ki}")
 
         # control switch
@@ -109,17 +111,30 @@ def loop():
                 ang = 0
 
         if mode == "PID":
-            ang_adj, previous_err, integral = PID_adj(kp, ki, kd,
-                                                      x, adj_pow, previous_err, integral)
-
-            ang += ang_adj * adj_pow/FPS
-
+            ang_set, previous_err, integral = PID_adj(kp, ki, kd,
+                                                      x, previous_err, integral)
+            print(integral)
+            if abs(ang - ang_set) < adj_pow/100:
+                 ang = ang                                
+            elif ang < ang_set:
+                ang += adj_pow/FPS
+            else:
+                ang -= adj_pow/FPS
+            
+            pressed_keys = pygame.key.get_pressed()
+            if pressed_keys[K_LEFT]:
+                f_p = - push_force
+            if pressed_keys[K_RIGHT]:
+                f_p = push_force
+            
         if ang < -math.pi/2:
             ang = -math.pi/2
         elif ang > math.pi/2:
             ang = math.pi/2
 
-        g, m, x, v, a, ang, adj_pow = simulation(g, m, x, v, a, ang, adj_pow)
+        g, m, x, v, a, ang = simulation(g, m, x, v, a, ang, f_p)
+
+        f_p = 0
 
         # print(f"x = {x}, angle = {ang *180/math.pi}")
 
@@ -133,22 +148,12 @@ def loop():
             entity.rect.center = (ball_x, ball_y)
 
         pygame.draw.line(DISPLAYSURF, BLACK, beam_start, beam_end, 5)
-
+        
         pygame.display.update()
         FramePerSec.tick(FPS)
 
 
-def simulation(g, m, x, v, a, ang, adj):
-
-    # if x <= 0:
-    #     ang = ang - adj/FPS
-    # else:
-    #     ang = ang + adj/FPS
-
-    # if ang < -math.pi/4:
-    #     ang = -math.pi/4
-    # elif ang > math.pi/4:
-    #     ang = math.pi/4
+def simulation(g, m, x, v, a, ang, f_p):
 
     # gravity acceleration
 
@@ -162,6 +167,10 @@ def simulation(g, m, x, v, a, ang, adj):
         a_f = u * math.cos(ang) * g
     else:
         a_f = u * math.cos(ang) * g
+
+    a_p = f_p / m
+
+    v += a_p / FPS
 
     v_before_g = v
 
@@ -196,34 +205,32 @@ def simulation(g, m, x, v, a, ang, adj):
         a = 0
         print("bump right")
 
-    return g, m, x, v, a, ang, adj
+    return g, m, x, v, a, ang
 
 
-def PID_adj(kp, ki, kd, x, adj_pow, previous_err, integral):
+def PID_adj(kp, ki, kd, x, previous_err, integral):
 
     # define P    
     err = x
     p = err
 
-    # if flipped_sign(err,previous_err):
-    #     integral = 0
-
     d = (err - previous_err) / (1/FPS)
 
     integral = integral + (err * (1/FPS))
+
     i = integral
 
-    ang_adj = kp * p + kd * d + ki * i
+    ang_set = kp * p + kd * d + ki * i
 
-    if abs(ang_adj) > adj_pow:
-        if ang_adj < 0:
-            ang_adj = - adj_pow
-        else:
-            ang_adj = adj_pow
+    # if abs(ang_set) > :
+    #     if ang_adj < 0:
+    #         ang_adj = - adj_pow
+    #     else:
+    #         ang_adj = adj_pow
 
     previous_err = err
 
-    return ang_adj, previous_err, integral
+    return ang_set, previous_err, integral
 
     # defind D
 
@@ -268,6 +275,13 @@ def flipped_sign(a, b):
         return 0
     return 1
 
+def within_percent(a, b, percent):
+    if a != 0 and b !=0:
+        if abs(a / b) < percent and abs(a / b) > (1/percent):
+            print("same")
+            return 1
+    
+    return 0
 
 if __name__ == "__main__":
     main()
