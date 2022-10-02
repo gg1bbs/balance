@@ -49,12 +49,15 @@ def loop():
     ang = 0
     f_p = 0
     adj_pow = 1
-    kp = 0.5 #0.5 to occilate at 1m beam length
-    ki = 0.5
-    kd = 0.4  # 0.6
+    kp = 0.4  #0.5
+    ki = 0.5  #0.5
+    kd = 0.4  #0.4
     push_force = 5
     previous_err = 0
     integral = 0
+    goal_options = [0, (beam_length/2)*0.5, -(beam_length/2)*0.5]
+    goal_select = 0
+    goal = goal_options[goal_select]
     P1 = Ball()
 
     all_sprites = pygame.sprite.Group()
@@ -79,6 +82,15 @@ def loop():
                     a = 0
                     ang = 0.05
                     print("reset")
+
+                if event.key == pygame.K_o:
+                    goal_select += 1
+                    if goal_select >= len(goal_options):
+                        goal_select = 0
+
+                    goal = goal_options[goal_select]
+
+                    print(f"goal = {goal}")
                 if event.key == pygame.K_1:
                     kp -= 0.01
                     print(f"kp = {kp}")
@@ -112,21 +124,21 @@ def loop():
 
         if mode == "PID":
             ang_set, previous_err, integral = PID_adj(kp, ki, kd,
-                                                      x, previous_err, integral)
+                                                      x, goal, previous_err, integral)
 
             if abs(ang - ang_set) < adj_pow/100:
-                 ang = ang                                
+                ang = ang
             elif ang < ang_set:
                 ang += adj_pow/FPS
             else:
                 ang -= adj_pow/FPS
-            
+
             pressed_keys = pygame.key.get_pressed()
             if pressed_keys[K_LEFT]:
                 f_p = - push_force
             if pressed_keys[K_RIGHT]:
                 f_p = push_force
-            
+
         if ang < -math.pi/2:
             ang = -math.pi/2
         elif ang > math.pi/2:
@@ -135,8 +147,6 @@ def loop():
         g, m, x, v, a, ang = simulation(g, m, x, v, a, ang, f_p)
 
         f_p = 0
-
-        # print(f"x = {x}, angle = {ang *180/math.pi}")
 
         DISPLAYSURF.fill(WHITE)
 
@@ -148,7 +158,7 @@ def loop():
             entity.rect.center = (ball_x, ball_y)
 
         pygame.draw.line(DISPLAYSURF, BLACK, beam_start, beam_end, 5)
-        
+
         pygame.display.update()
         FramePerSec.tick(FPS)
 
@@ -156,7 +166,6 @@ def loop():
 def simulation(g, m, x, v, a, ang, f_p):
 
     # gravity acceleration
-
     a_g = -1 * (math.sin(ang) * g)
 
     # friction acceleration
@@ -168,6 +177,7 @@ def simulation(g, m, x, v, a, ang, f_p):
     else:
         a_f = u * math.cos(ang) * g
 
+    # acceleration from push force
     a_p = f_p / m
 
     v += a_p / FPS
@@ -208,10 +218,10 @@ def simulation(g, m, x, v, a, ang, f_p):
     return g, m, x, v, a, ang
 
 
-def PID_adj(kp, ki, kd, x, previous_err, integral):
+def PID_adj(kp, ki, kd, x, goal, previous_err, integral):
 
-    # define P    
-    err = x
+    # define P
+    err = x - goal
     p = err
 
     d = (err - previous_err) / (1/FPS)
@@ -222,21 +232,9 @@ def PID_adj(kp, ki, kd, x, previous_err, integral):
 
     ang_set = kp * p + kd * d + ki * i
 
-    # if abs(ang_set) > :
-    #     if ang_adj < 0:
-    #         ang_adj = - adj_pow
-    #     else:
-    #         ang_adj = adj_pow
-
     previous_err = err
 
     return ang_set, previous_err, integral
-
-    # defind D
-
-    # define I
-
-    # combine and return result
 
 
 def ball_pos(x, ang):
@@ -275,13 +273,15 @@ def flipped_sign(a, b):
         return 0
     return 1
 
+
 def within_percent(a, b, percent):
-    if a != 0 and b !=0:
+    if a != 0 and b != 0:
         if abs(a / b) < percent and abs(a / b) > (1/percent):
             print("same")
             return 1
-    
+
     return 0
+
 
 if __name__ == "__main__":
     main()
