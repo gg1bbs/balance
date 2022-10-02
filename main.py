@@ -49,7 +49,7 @@ def loop():
     ang = 0
     f_p = 0
     adj_pow = 1
-    kp = 0.4  #0.5
+    kp = 0.5  #0.5
     ki = 0.5  #0.5
     kd = 0.4  #0.4
     push_force = 5
